@@ -1,19 +1,24 @@
 ﻿using BookStore.CORE.Consts;
-using BookStore.CORE.Repositories;
+using BookStore.EF;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace BookStore.EF.Repositories;
+namespace BookStore.CORE.Repositories;
+
 public class GenericRepository<T>:IGenericRepository<T> where T : class
 {
     private readonly ApplicationDbContext _context;
+    private readonly IImageProcesses _imageProcesses;
 
-    public GenericRepository(ApplicationDbContext context)
+    public GenericRepository(ApplicationDbContext context, IImageProcesses imageProcesses )
     {
         _context = context;
+        _imageProcesses = imageProcesses;
     }
 
-    public IEnumerable<T> GetAll() => _context.Set<T>().ToList();
+    public IEnumerable<T> GetAll(int pageSize, int pageNumber)
+        => _context.Set<T>().Skip(pageNumber*pageSize).Take(pageSize).ToList();
+    
 
     public async Task<IEnumerable<T>> GetAllAsync() => await _context.Set<T>().ToListAsync();
 
@@ -145,7 +150,13 @@ public class GenericRepository<T>:IGenericRepository<T> where T : class
         return entity;
     }
 
-    public void Delete(T entity) => _context.Set<T>().Remove(entity);
+    public void Delete(T entity, string filePath = null)
+    {
+        if(!string.IsNullOrEmpty(filePath))
+            _imageProcesses.DeleteImage(filePath);
+
+        _context.Set<T>().Remove(entity);
+    }
 
     public void DeleteRange(IEnumerable<T> entities)
         =>_context.Set<T>().RemoveRange(entities);

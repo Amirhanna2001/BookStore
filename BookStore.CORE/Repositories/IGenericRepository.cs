@@ -6,7 +6,7 @@ public interface IGenericRepository<T> where T : class
 {
     T GetById(int id);
     Task<T> GetByIdAsync(int id);
-    IEnumerable<T> GetAll();
+    IEnumerable<T> GetAll(int pageSize,int pageNumber);
     Task<IEnumerable<T>> GetAllAsync();
     T Find(Expression<Func<T, bool>> criteria, string[] includes = null);
     Task<T> FindAsync(Expression<Func<T, bool>> criteria, string[] includes = null);
@@ -24,7 +24,7 @@ public interface IGenericRepository<T> where T : class
     IEnumerable<T> AddRange(IEnumerable<T> entities);
     Task<IEnumerable<T>> AddRangeAsync(IEnumerable<T> entities);
     T Update(T entity);
-    void Delete(T entity);
+    void Delete(T entity,string fileFath = null);
     void DeleteRange(IEnumerable<T> entities);
     void Attach(T entity);
     void AttachRange(IEnumerable<T> entities);
