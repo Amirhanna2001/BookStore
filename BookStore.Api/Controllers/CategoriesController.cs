@@ -11,14 +11,12 @@ namespace BookStore.Api.Controllers;
 public class CategoriesController : ControllerBase
 {
     private readonly IUnitOfWork _unitOfWork;
-    private readonly IMapper _mapper;
     private readonly IConfiguration _config;
     private readonly IImageProcesses _imageProcesses;
 
-    public CategoriesController(IUnitOfWork unitOfWork, IMapper mapper, IConfiguration config, IImageProcesses imageProcesses)
+    public CategoriesController(IUnitOfWork unitOfWork, IConfiguration config, IImageProcesses imageProcesses)
     {
         _unitOfWork = unitOfWork;
-        _mapper = mapper;
         _config = config;
         _imageProcesses = imageProcesses;
     }
@@ -38,7 +36,7 @@ public class CategoriesController : ControllerBase
         return Ok(cat);
     }
     [HttpPost]
-    public async Task<ActionResult<Category>>Create(CreateCategoryDTO dto)
+    public async Task<ActionResult<Category>>Create([FromForm]CategoryDTO dto)
     {
         if (dto == null)
             return BadRequest();
@@ -59,21 +57,22 @@ public class CategoriesController : ControllerBase
         return Ok(cat);
     }
     [HttpPut("{id}")]
-    public async Task<ActionResult<Category>>Edit(byte id, [FromForm]CreateCategoryDTO dto)
+    public async Task<ActionResult<Category>>Edit(byte id, [FromForm]CategoryDTO dto)
     {
+        string folderPath = _config["ImageStorage:Category"];
         Category cat = await _unitOfWork.Categories.GetByIdAsync(id);
         if(cat == null)
             return NotFound($"No category found by id = {id}");
 
         if (dto.Image != null)
         {
-            string path = cat.ImageUrl;
+            string oldImagePath = cat.ImageUrl;
             if (_imageProcesses.IsAvailableExtension(dto.Image))
-                cat.ImageUrl = await _imageProcesses.StoreImage(dto.Image, _config["ImageStorage:Category"]);
+                cat.ImageUrl = await _imageProcesses.StoreImage(dto.Image, folderPath);
             else
                 return BadRequest("Only allowed extensions (.PNG & .JPG)");
 
-            _imageProcesses.DeleteImage(path);
+            _imageProcesses.DeleteImage(Path.Combine(folderPath,oldImagePath));
         }
         cat.Name = dto.Name;
         _unitOfWork.Categories.Update(cat);
@@ -90,6 +89,5 @@ public class CategoriesController : ControllerBase
         _unitOfWork.Categories.Delete(cat,Path.Combine( _config["ImageStorage:Category"],cat.ImageUrl));
         _unitOfWork.SaveChanges();
         return Ok(cat);
-
     }
 }

@@ -10,10 +10,11 @@ public class UnitOfWork : IUnitOfWork
     private readonly IImageProcesses _imageProcesses;
     //public IGenericRepository<Category> Categories { get; private set; }
     public ICategoryRepository Categories { get; private set; }
+    public IGenericRepository<Author> Authors { get; private set; }
     public UnitOfWork(ApplicationDbContext context, IImageProcesses imageProcesses)
     {
         _context = context;
-        //Categories =new GenericRepository<Category>(_context);
+        Authors = new GenericRepository<Author>(_context,imageProcesses);
         Categories = new CategoryRepository(_context, imageProcesses);
         _imageProcesses = imageProcesses;
     }
