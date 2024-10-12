@@ -8,12 +8,13 @@ public class UnitOfWork : IUnitOfWork
 {
     private readonly ApplicationDbContext _context;
     private readonly IImageProcesses _imageProcesses;
-    //public IGenericRepository<Category> Categories { get; private set; }
     public ICategoryRepository Categories { get; private set; }
+    public IGenericRepository<Book> Books { get; private set; }
     public IGenericRepository<Author> Authors { get; private set; }
     public UnitOfWork(ApplicationDbContext context, IImageProcesses imageProcesses)
     {
         _context = context;
+        Books = new GenericRepository<Book>(_context,imageProcesses);
         Authors = new GenericRepository<Author>(_context,imageProcesses);
         Categories = new CategoryRepository(_context, imageProcesses);
         _imageProcesses = imageProcesses;

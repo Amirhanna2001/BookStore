@@ -18,8 +18,16 @@ public class GenericRepository<T>:IGenericRepository<T> where T : class
 
     public IEnumerable<T> GetAll(int pageSize, int pageNumber)
         => _context.Set<T>().Skip(pageNumber*pageSize).Take(pageSize).ToList();
-    
 
+    public  IEnumerable<T> GetAll(int pageSize, int pageNumber, string[] includes = null)
+    {
+        IQueryable<T> query =  _context.Set<T>().Skip(pageNumber * pageSize).Take(pageSize);
+        if(includes != null )
+            foreach(var include in includes)
+                query = query.Include(include);
+
+        return  query.ToList();
+    }
     public async Task<IEnumerable<T>> GetAllAsync() => await _context.Set<T>().ToListAsync();
 
     public T GetById(int id) => _context.Set<T>().Find(id);
