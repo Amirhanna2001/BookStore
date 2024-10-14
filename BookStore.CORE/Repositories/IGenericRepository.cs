@@ -8,6 +8,7 @@ public interface IGenericRepository<T> where T : class
     Task<T> GetByIdAsync(int id);
     IEnumerable<T> GetAll(int pageSize,int pageNumber);
     IEnumerable<T> GetAll(int pageSize,int pageNumber, string[] includes = null);
+    IEnumerable<T> GetAll(Expression<Func<T, bool>> criteria, int pageSize, int pageNumber, string[] includes = null);
     Task<IEnumerable<T>> GetAllAsync();
     T Find(Expression<Func<T, bool>> criteria, string[] includes = null);
     Task<T> FindAsync(Expression<Func<T, bool>> criteria, string[] includes = null);

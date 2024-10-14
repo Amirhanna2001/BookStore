@@ -28,6 +28,15 @@ public class GenericRepository<T>:IGenericRepository<T> where T : class
 
         return  query.ToList();
     }
+    public  IEnumerable<T> GetAll(Expression<Func<T,bool>> criteria, int pageSize, int pageNumber, string[] includes = null)
+    {
+        IQueryable<T> query =  _context.Set<T>().Where(criteria).Skip(pageNumber * pageSize).Take(pageSize);
+        if(includes != null )
+            foreach(var include in includes)
+                query = query.Include(include);
+
+        return  query.ToList();
+    }
     public async Task<IEnumerable<T>> GetAllAsync() => await _context.Set<T>().ToListAsync();
 
     public T GetById(int id) => _context.Set<T>().Find(id);
