@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using BookStore.CORE;
+using BookStore.CORE.Consts;
 using BookStore.CORE.DTOs;
 using BookStore.CORE.Models;
 using BookStore.CORE.Repositories;
@@ -21,11 +22,9 @@ public class CategoriesController : ControllerBase
         _imageProcesses = imageProcesses;
     }
     [HttpGet]
-    public async Task<ActionResult<Category>> GetCategories(int pageNumber)
-    {
-        int pageSize =int.Parse(_config["Pagination:PageSize"]);
-        return Ok( _unitOfWork.Categories.GetAll(pageSize,--pageNumber));
-    }
+    public ActionResult<Category> GetCategories(int pageNumber)
+        => Ok( _unitOfWork.Categories.GetAll(Pagination.PageSize,--pageNumber));
+    
     [HttpGet("{id}")]
     public async Task<ActionResult<Category>>GetById(byte id)
     {
@@ -50,6 +49,7 @@ public class CategoriesController : ControllerBase
             cat.ImageUrl = await _imageProcesses.StoreImage(dto.Image, _config["ImageStorage:Category"]);
         else
             return BadRequest("Only allowed extensions (.PNG & .JPG)");
+
         cat.Name = dto.Name;
         _unitOfWork.Categories.Add(cat);
         _unitOfWork.SaveChanges();

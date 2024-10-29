@@ -3,6 +3,7 @@ using BookStore.CORE.Repositories;
 using BookStore.CORE;
 using Microsoft.AspNetCore.Mvc;
 using BookStore.CORE.DTOs;
+using BookStore.CORE.Consts;
 
 namespace BookStore.Api.Controllers;
 [Route("api/[controller]")]
@@ -20,11 +21,9 @@ public class AuthorsController : ControllerBase
         _imageProcesses = imageProcesses;
     }
     [HttpGet]
-    public async Task<ActionResult<Author>> GetAuthors(int pageNumber)
-    {
-        int pageSize = int.Parse(_config["Pagination:PageSize"]);
-        return Ok(_unitOfWork.Authors.GetAll(pageSize, --pageNumber));
-    }
+    public ActionResult<Author> GetAuthors(int pageNumber)
+        => Ok(_unitOfWork.Authors.GetAll(Pagination.PageSize, --pageNumber));
+    
     [HttpGet("{id}")]
     public async Task<ActionResult<Author>> GetById(int id)
     {
@@ -89,6 +88,5 @@ public class AuthorsController : ControllerBase
         _unitOfWork.Authors.Delete(author, Path.Combine(_config["ImageStorage:Author"], author.ImageUrl));
         _unitOfWork.SaveChanges();
         return Ok(author);
-
     }
 }

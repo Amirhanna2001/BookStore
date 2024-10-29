@@ -1,12 +1,7 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using Microsoft.AspNetCore.Http;
 
 namespace BookStore.CORE.DTOs;
-public class BookDTO:BaseDTO
+public class BookDTO:BaseBookDTO
 {
-    public int Quantity { get; set; }
-    public decimal Price { get; set; }
-    [Range(0, 100)]
-    public byte SalePercentage { get; set; }
-    public byte CategoryId { get; set; }
-    public int AuthorId { get; set; }
+    public IFormFile? Image;
 }

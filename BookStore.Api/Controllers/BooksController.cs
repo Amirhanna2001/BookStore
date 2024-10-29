@@ -24,17 +24,14 @@ public class BooksController : ControllerBase
         _mapper = mapper;
     }
     [HttpGet]
-    public async Task<ActionResult<Book>> GetBooks(int pageNumber)
+    public ActionResult<Book> GetBooks(int pageNumber)
     {
-
         var books = _unitOfWork.Books.GetAll(Pagination.PageSize, --pageNumber,["Author","Category"]);
-        if (books == null || !books.Any())
-        {
+        if (books == null)
             return NotFound();
-        }
-        return Ok(_mapper.Map<IEnumerable<ReturnBookDTO>>(books));
-    }
         
+        return Ok(_mapper.Map<IEnumerable<ReturnBookDTO>>(books));
+    }       
     
     [HttpGet("{id}")]
     public async Task<ActionResult<Book>> GetById(int id)
@@ -93,7 +90,7 @@ public class BooksController : ControllerBase
             _imageProcesses.DeleteImage(Path.Combine(folderPath, oldImagePath));
         }
         if (_unitOfWork.Categories.GetById(dto.CategoryId) == null)
-            return BadRequest($"No categories found by id = {dto.CategoryId}");
+            return BadRequest($"error: No categories found by id = {dto.CategoryId}");
 
         if (_unitOfWork.Authors.GetById(dto.AuthorId) == null)
             return BadRequest($"No authors found by id = {dto.AuthorId}");
@@ -108,13 +105,13 @@ public class BooksController : ControllerBase
     [HttpDelete("{id}")]
     public async Task<ActionResult<Book>> Delete(byte id)
     {
-        Book Book = await _unitOfWork.Books.GetByIdAsync(id);
-        if (Book == null)
+        Book book = await _unitOfWork.Books.GetByIdAsync(id);
+        if (book == null)
             return NotFound($"No Book found by id = {id}");
 
-        _unitOfWork.Books.Delete(Book, Path.Combine(_config["ImageStorage:Book"], Book.ImageUrl));
+        _unitOfWork.Books.Delete(book, Path.Combine(_config["ImageStorage:Book"], book.ImageUrl));
         _unitOfWork.SaveChanges();
-        return Ok(Book);
+        return Ok(book);
     }
     [HttpGet("GetBooksByCategory")]
     public async Task<ActionResult<Book>>  GetAllBooksFilteredByCategory(byte catId,int pageNum)
@@ -123,7 +120,7 @@ public class BooksController : ControllerBase
         if (category == null) 
             return NotFound("Category you want is not exists ");
 
-        return Ok(_unitOfWork.Books.GetAll(b=>b.CategoryId == catId,Pagination.PageSize,--pageNum, ["Author"]));
+        return Ok(_unitOfWork.Books.FindAll(b=>b.CategoryId == catId,Pagination.PageSize,--pageNum, ["Author"]));
     }
     [HttpGet("GetBooksByAuthor")]
     public async Task<ActionResult<Book>>  GetAllBooksFilteredByAuthor(int authorId,int pageNum)
@@ -132,7 +129,6 @@ public class BooksController : ControllerBase
         if (author == null) 
             return NotFound("Author you want is not exists ");
 
-        return Ok(_unitOfWork.Books.GetAll(b=>b.CategoryId == authorId,Pagination.PageSize,--pageNum, [ "Category"]));
-    }
-       
+        return Ok(_unitOfWork.Books.FindAll(b=>b.CategoryId == authorId,Pagination.PageSize,--pageNum, [ "Category"]));
+    }       
 }

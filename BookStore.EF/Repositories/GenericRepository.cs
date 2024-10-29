@@ -1,10 +1,8 @@
-﻿using BookStore.CORE.Consts;
-using BookStore.EF;
+﻿using BookStore.EF;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
 namespace BookStore.CORE.Repositories;
-
 public class GenericRepository<T>:IGenericRepository<T> where T : class
 {
     private readonly ApplicationDbContext _context;
@@ -19,6 +17,9 @@ public class GenericRepository<T>:IGenericRepository<T> where T : class
     public IEnumerable<T> GetAll(int pageSize, int pageNumber)
         => _context.Set<T>().Skip(pageNumber*pageSize).Take(pageSize).ToList();
 
+    public async Task<IEnumerable<T>> GetAllAsync(int pageSize, int pageNumber)
+        =>await _context.Set<T>().Skip(pageNumber*pageSize).Take(pageSize).ToListAsync();
+
     public  IEnumerable<T> GetAll(int pageSize, int pageNumber, string[] includes = null)
     {
         IQueryable<T> query =  _context.Set<T>().Skip(pageNumber * pageSize).Take(pageSize);
@@ -28,7 +29,16 @@ public class GenericRepository<T>:IGenericRepository<T> where T : class
 
         return  query.ToList();
     }
-    public  IEnumerable<T> GetAll(Expression<Func<T,bool>> criteria, int pageSize, int pageNumber, string[] includes = null)
+    public async Task<IEnumerable<T>> GetAllAsync(int pageSize, int pageNumber, string[] includes = null)
+    {
+        IQueryable<T> query =  _context.Set<T>().Skip(pageNumber * pageSize).Take(pageSize);
+        if(includes != null )
+            foreach(var include in includes)
+                query = query.Include(include);
+
+        return await query.ToListAsync();
+    }
+    public  IEnumerable<T> FindAll(Expression<Func<T,bool>> criteria, int pageSize, int pageNumber, string[] includes = null)
     {
         IQueryable<T> query =  _context.Set<T>().Where(criteria).Skip(pageNumber * pageSize).Take(pageSize);
         if(includes != null )
@@ -37,7 +47,15 @@ public class GenericRepository<T>:IGenericRepository<T> where T : class
 
         return  query.ToList();
     }
-    public async Task<IEnumerable<T>> GetAllAsync() => await _context.Set<T>().ToListAsync();
+    public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T,bool>> criteria, int pageSize, int pageNumber, string[] includes = null)
+    {
+        IQueryable<T> query =  _context.Set<T>().Where(criteria).Skip(pageNumber * pageSize).Take(pageSize);
+        if(includes != null )
+            foreach(var include in includes)
+                query = query.Include(include);
+
+        return await query.ToListAsync();
+    }
 
     public T GetById(int id) => _context.Set<T>().Find(id);
 
@@ -63,78 +81,6 @@ public class GenericRepository<T>:IGenericRepository<T> where T : class
                 query = query.Include(include);
 
         return await query.SingleOrDefaultAsync(criteria);
-    }
-
-    public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, string[] includes = null)
-    {
-        IQueryable<T> query = _context.Set<T>();
-
-        if (includes != null)
-            foreach (var include in includes)
-                query = query.Include(include);
-
-        return query.Where(criteria).ToList();
-    }
-
-    public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int skip, int take)
-        => _context.Set<T>().Where(criteria).Skip(skip).Take(take).ToList();
-
-    public IEnumerable<T> FindAll(Expression<Func<T, bool>> criteria, int? skip, int? take,
-        Expression<Func<T, object>> orderBy = null, string orderByDirection = OrderBy.Ascending)
-    {
-        IQueryable<T> query = _context.Set<T>().Where(criteria);
-
-        if (skip.HasValue)
-            query = query.Skip(skip.Value);
-
-        if (take.HasValue)
-            query = query.Take(take.Value);
-
-        if (orderBy != null)
-        {
-            if (orderByDirection == OrderBy.Ascending)
-                query = query.OrderBy(orderBy);
-            else
-                query = query.OrderByDescending(orderBy);
-        }
-
-        return query.ToList();
-    }
-
-    public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> criteria, string[] includes = null)
-    {
-        IQueryable<T> query = _context.Set<T>();
-
-        if (includes != null)
-            foreach (var include in includes)
-                query = query.Include(include);
-
-        return await query.Where(criteria).ToListAsync();
-    }
-
-    public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> criteria, int take, int skip)
-        =>await _context.Set<T>().Where(criteria).Skip(skip).Take(take).ToListAsync();
-
-    public async Task<IEnumerable<T>> FindAllAsync(Expression<Func<T, bool>> criteria, int? take, int? skip,
-        Expression<Func<T, object>> orderBy = null, string orderByDirection = OrderBy.Ascending)
-    {
-        IQueryable<T> query = _context.Set<T>().Where(criteria);
-
-        if (skip.HasValue)
-            query = query.Skip(skip.Value);
-
-        if (take.HasValue)
-            query = query.Take(take.Value);
-
-        if (orderBy != null)
-        {
-            if (orderByDirection == OrderBy.Ascending)
-                query = query.OrderBy(orderBy);
-            else
-                query = query.OrderByDescending(orderBy);
-        }
-
-        return await query.ToListAsync();
     }
 
     public T Add(T entity)
