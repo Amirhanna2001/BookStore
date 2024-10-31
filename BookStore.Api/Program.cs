@@ -1,4 +1,3 @@
-using BookStore.Api.JWTConfig;
 using BookStore.CORE;
 using BookStore.CORE.Models;
 using BookStore.CORE.Repositories;
@@ -47,7 +46,7 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddTransient<IUnitOfWork,UnitOfWork>();
 builder.Services.AddTransient<ICategoryRepository,CategoryRepository>();
 builder.Services.AddTransient<IImageProcesses, ImagesProcesses>();
-builder.Services.Configure<JWT>(builder.Configuration.GetSection(nameof(JWT)));
+builder.Services.Configure<BookStore.CORE.Models.JWT>(builder.Configuration.GetSection(nameof(JWT)));
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
 var app = builder.Build();

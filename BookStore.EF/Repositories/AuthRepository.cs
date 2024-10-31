@@ -1,78 +1,112 @@
-﻿using BookStore.CORE.DTOs;
+﻿using Azure.Core;
+using BookStore.CORE.DTOs;
 using BookStore.CORE.Models;
 using BookStore.CORE.Repositories;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using System.Data;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
-
 
 namespace BookStore.EF.Repositories;
 public class AuthRepository : IAuthRepository
 {
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly RoleManager<IdentityRole> _roleManager;
     private readonly JWT _jwt;
 
-    public AuthRepository(UserManager<ApplicationUser> userManager)
+    public AuthRepository(UserManager<ApplicationUser> userManager, IOptions<JWT> jwt, RoleManager<IdentityRole> roleManager)
     {
         _userManager = userManager;
+        _jwt = jwt.Value;
+        _roleManager = roleManager;
     }
 
     public async Task<AuthModel> RegisterAsync(RegisterDTO dto)
     {
-        if(_userManager.FindByEmailAsync(dto.Email).Result != null) 
-            return new AuthModel() { Message = "This email is already exists"};
+        ApplicationUser appUser = await _userManager.FindByEmailAsync(dto.Email);
+        if (appUser is not null)
+            return new AuthModel { Message = "This email already exists." };
 
-        ApplicationUser user = new()
+        appUser = new ApplicationUser
         {
             FirstName = dto.FirstName,
             LastName = dto.LastName,
             UserName = dto.UserName,
-            Email = dto.Email
+            Email = dto.Email,
+            EmailConfirmed = false
         };
 
-        IdentityResult result = await _userManager.CreateAsync(user,dto.Password);
-        if (!result.Succeeded) 
+        IdentityResult result = await _userManager.CreateAsync(appUser, dto.Password);
+
+        if (!result.Succeeded)
+            return new AuthModel ()
+            {
+                Message = string.Join(", ", result.Errors.Select(error => error.Description))
+            };
+        
+        var roles = await _userManager.GetRolesAsync(appUser);
+        return new AuthModel
         {
-            string errors = "";
+            IsAuthenticated = true,
+            Username = appUser.UserName,
+            Email = appUser.Email,
+            Roles = roles.ToList(), 
+            Message = "Registration successful."
+        };
+    }
+    public async Task<AuthModel> Login(LoginDTO loginDTO)
+    {
+        ApplicationUser user = await _userManager.FindByEmailAsync(loginDTO.Email);
 
-            foreach (IdentityError error in result.Errors)
-                errors += $"{error.Description} - ";
-            return new AuthModel() { Message = errors };
+        if (user == null || !_userManager.CheckPasswordAsync(user, loginDTO.Password).Result)
+            return new AuthModel()
+            {
+                Message = "Password Or Email is incorrect",
 
+            };
+        var roles = await _userManager.GetRolesAsync(user);
+        return new AuthModel()
+        {
+            Token = GenerateToken(user).Result,
+            IsAuthenticated = true,
+            Username = user.UserName,
+            Email = user.Email,
+            Roles = roles.ToList(),
+        };
+    }
+    private async Task<string> GenerateToken(ApplicationUser user)
+    {
+        List<Claim> claims = new()
+             {
+                new Claim(ClaimTypes.Name, user.UserName),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
+                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+        IList<string> roles = await _userManager.GetRolesAsync(user);
+        foreach (string role in roles)
+        {
+            claims.Add(new Claim(ClaimTypes.Role, role));
         }
 
-    }
-    private async Task<JwtSecurityToken> CreateJwtToken(ApplicationUser user)
-    {
-        var userClaims = await _userManager.GetClaimsAsync(user);
-        var roles = await _userManager.GetRolesAsync(user);
-        var roleClaims = new List<Claim>();
+        byte[] keyBytes = Encoding.UTF8.GetBytes(_jwt.Key);
 
-        foreach (var role in roles)
-            roleClaims.Add(new Claim("roles", role));
+        SigningCredentials signingCredentials = new SigningCredentials(
+            new SymmetricSecurityKey(keyBytes),
+            SecurityAlgorithms.HmacSha256
+        );
 
-        var claims = new[]
-        {
-                new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim("uid", user.Id)
-            }
-        .Union(userClaims)
-        .Union(roleClaims);
-
-        var symmetricSecurityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.Key));
-        var signingCredentials = new SigningCredentials(symmetricSecurityKey, SecurityAlgorithms.HmacSha256);
-
-        var jwtSecurityToken = new JwtSecurityToken(
+        JwtSecurityToken token = new JwtSecurityToken(
             issuer: _jwt.Issuer,
             audience: _jwt.Audience,
             claims: claims,
             expires: DateTime.Now.AddDays(_jwt.DurationInDays),
-            signingCredentials: signingCredentials);
+            signingCredentials: signingCredentials
+        );
 
-        return jwtSecurityToken;
+        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }

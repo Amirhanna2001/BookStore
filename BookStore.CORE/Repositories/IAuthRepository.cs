@@ -4,5 +4,6 @@ using BookStore.CORE.Models;
 namespace BookStore.CORE.Repositories;
 public interface IAuthRepository
 {
-    public Task<AuthModel> RegisterAsync(RegisterDTO dto);
+    Task<AuthModel> RegisterAsync(RegisterDTO dto);
+    Task<AuthModel> Login(LoginDTO loginDTO);
 }

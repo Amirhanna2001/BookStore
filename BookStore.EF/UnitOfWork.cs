@@ -11,6 +11,7 @@ public class UnitOfWork : IUnitOfWork
     public ICategoryRepository Categories { get; private set; }
     public IGenericRepository<Book> Books { get; private set; }
     public IGenericRepository<Author> Authors { get; private set; }
+    public IAuthRepository AuthRepository { get; private set; }
     public UnitOfWork(ApplicationDbContext context, IImageProcesses imageProcesses)
     {
         _context = context;
