@@ -1,7 +1,6 @@
 ﻿using BookStore.CORE.DTOs;
 using BookStore.CORE.Models;
 using BookStore.CORE.Repositories;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookStore.Api.Controllers;

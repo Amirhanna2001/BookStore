@@ -54,7 +54,7 @@ public class AuthRepository : IAuthRepository
             Username = appUser.UserName,
             Email = appUser.Email,
             Roles = roles.ToList(), 
-            Message = "Registration successful."
+            Message = "Successful Registration."
         };
     }
     public async Task<AuthModel> Login(LoginDTO loginDTO)
@@ -109,4 +109,6 @@ public class AuthRepository : IAuthRepository
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    
 }

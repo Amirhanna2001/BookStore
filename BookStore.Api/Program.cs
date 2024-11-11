@@ -48,6 +48,7 @@ builder.Services.AddTransient<ICategoryRepository,CategoryRepository>();
 builder.Services.AddTransient<IImageProcesses, ImagesProcesses>();
 builder.Services.Configure<BookStore.CORE.Models.JWT>(builder.Configuration.GetSection(nameof(JWT)));
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+builder.Services.AddScoped<IRoleRepository, RoleRepository>();
 
 var app = builder.Build();
 if (app.Environment.IsDevelopment())
