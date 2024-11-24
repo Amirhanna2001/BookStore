@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using BookStore.CORE.Consts;
 using BookStore.CORE.DTOs;
 using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 
 namespace BookStore.Api.Controllers;
 [Route("api/[controller]")]
@@ -24,6 +25,7 @@ public class BooksController : ControllerBase
         _mapper = mapper;
     }
     [HttpGet]
+    [Authorize(Roles = "Admin")]
     public ActionResult<Book> GetBooks(int pageNumber)
     {
         var books = _unitOfWork.Books.GetAll(Pagination.PageSize, --pageNumber,["Author","Category"]);
